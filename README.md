@@ -41,7 +41,7 @@ func main(){
     Primitive: "primitive",
     Name: "name",
   }
-  masked := mask.Must(data)
+  masked := mask.Must(sensitiveData)
   log.Printf("%v", masked)
 }
 
