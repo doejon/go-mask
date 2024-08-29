@@ -218,6 +218,8 @@ type testStruct struct {
 
 	Strct1 testStruct2
 	Strct2 *testStruct2
+
+	CustomInterface interface{}
 }
 
 func newTestStruct() *testStruct {
@@ -242,7 +244,6 @@ func newTestStruct() *testStruct {
 			N: "n2",
 		},
 	}
-
 }
 
 func (t *testStruct) MaskXXX() {
@@ -309,6 +310,77 @@ func TestMask(t *testing.T) {
 
 	if masked.Value != "MASKED" {
 		t.Errorf("expect %v == MASKED", masked.Value)
+	}
+
+}
+
+func TestStructInterfaceKey(t *testing.T) {
+
+	val := newTestStruct()
+	val.CustomInterface = "123"
+	masked := Must(val)
+
+	if masked.CustomInterface != "123" {
+		t.Errorf("expect %v == 123", masked.CustomInterface)
+	}
+
+	val.CustomInterface = 1
+	masked = Must(val)
+
+	if masked.CustomInterface != 1 {
+		t.Errorf("expect %v == 1", masked.CustomInterface)
+	}
+
+	val.CustomInterface = []string{"1"}
+	masked = Must(val)
+
+	arr, ok := masked.CustomInterface.([]string)
+	if !ok {
+		t.Errorf("expect %v to be array", masked.CustomInterface)
+	}
+	if len(arr) != 1 {
+		t.Errorf("expect %v to have len 1", masked.CustomInterface)
+	}
+	if arr[0] != "1" {
+		t.Errorf("expect %v == 1", arr[0])
+	}
+
+	type S struct {
+		Data string
+	}
+	var x = &S{
+		Data: "123",
+	}
+
+	val.CustomInterface = x
+	masked = Must(val)
+
+	ptr, ok := masked.CustomInterface.(*S)
+	if !ok {
+		t.Fatalf("expect %v to be ptr S", masked.CustomInterface)
+	}
+	if ptr == nil {
+		t.Fatalf("expected ptr to be copied, got nil")
+	}
+
+	if ptr.Data != "123" {
+		if arr[0] != "1" {
+			t.Errorf("expect %v == 123", ptr.Data)
+		}
+	}
+
+	val.CustomInterface = *x
+	masked = Must(val)
+
+	strct, ok := masked.CustomInterface.(S)
+	if !ok {
+		t.Fatalf("expect %v to be  S", masked.CustomInterface)
+	}
+
+	if strct.Data != "123" {
+		if arr[0] != "1" {
+			t.Errorf("expect %v == 123", strct.Data)
+		}
 	}
 
 }

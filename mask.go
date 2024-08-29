@@ -247,7 +247,23 @@ func _struct(x interface{}, ptrs map[uintptr]interface{}) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to copy the field %v in the struct %#v: %v", t.Field(i).Name, x, err)
 		}
-		dc.Elem().Field(i).Set(reflect.ValueOf(item))
+		vof := reflect.ValueOf(item)
+		fld := dc.Elem().Field(i)
+		if fld.Kind() == reflect.Interface {
+			// got ourselves an interface key
+			if vof.IsValid() {
+				if vof.Kind() == reflect.Ptr {
+					newField := reflect.New(fld.Type())
+					newField.Elem().Set(vof)
+					fld.Set(newField.Elem())
+				} else {
+					fld.Set(vof)
+				}
+			}
+		} else {
+			fld.Set(vof)
+		}
+
 	}
 	return dc.Elem().Interface(), nil
 }
